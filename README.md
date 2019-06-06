@@ -59,9 +59,9 @@ Links:
 - [Prawn vs. Snail: Nature’s Role in Fighting Disease](https://woods.stanford.edu/news-events/news/prawn-vs-snail-natures-role-fighting-disease)
 
 ## References
-[1] Sokolow SH, Wood CL, Jones IJ, Swartz SJ, Lopez M, Hsieh MH, Lafferty KD, Kuris AM, Rickards C, De Leo GA. Global assessment of schistosomiasis control over the past century shows targeting the snail intermediate host works best. PLoS neglected tropical diseases. 2016 Jul 21;10(7):e0004794.
-[2] Sokolow SH, Huttinger E, Jouanard N, Hsieh MH, Lafferty KD, Kuris AM, Riveau G, Senghor S, Thiam C, N’Diaye A, Faye DS. Reduced transmission of human schistosomiasis after restoration of a native river prawn that preys on the snail intermediate host. Proceedings of the National Academy of Sciences. 2015 Aug 4;112(31):9650-5.
-[3] Liu ZY-C, Chamberlin AJ, Shome P, Jones IJ, Riveau G, Jouanard N, Ndione, Sokolow SH, De Leo GA. Snail and Parasite Image Classification using Deep Convolutional Neural Networks: Application to Human Schistosomiasis Environmental Risk Monitoring. PLoS neglected tropical diseases. 2019 (submitted).
+- [1] Sokolow SH, Wood CL, Jones IJ, Swartz SJ, Lopez M, Hsieh MH, Lafferty KD, Kuris AM, Rickards C, De Leo GA. Global assessment of schistosomiasis control over the past century shows targeting the snail intermediate host works best. PLoS neglected tropical diseases. 2016 Jul 21;10(7):e0004794.
+- [2] Sokolow SH, Huttinger E, Jouanard N, Hsieh MH, Lafferty KD, Kuris AM, Riveau G, Senghor S, Thiam C, N’Diaye A, Faye DS. Reduced transmission of human schistosomiasis after restoration of a native river prawn that preys on the snail intermediate host. Proceedings of the National Academy of Sciences. 2015 Aug 4;112(31):9650-5.
+- [3] Liu ZY-C, Chamberlin AJ, Shome P, Jones IJ, Riveau G, Jouanard N, Ndione, Sokolow SH, De Leo GA. Snail and Parasite Image Classification using Deep Convolutional Neural Networks: Application to Human Schistosomiasis Environmental Risk Monitoring. PLoS neglected tropical diseases. 2019 (submitted).
 
 ## Contact
 achamb@stanford.edu; zacycliu@stanford.edu or ssokolow@stanford.edu
