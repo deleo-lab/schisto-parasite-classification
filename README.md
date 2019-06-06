@@ -12,6 +12,24 @@ In addition, by working with IBM's Cognitive Open Technologies & Performance Gro
 
 Abbreviations of parasite classes as follow, HS: Human-schisto, NHS1: Nonhuman- schisto forktail type I, NHS2: Nonhuman- schisto forktail type II, AM: Amphistome, BO: Bovis, EC: Echino, GY: Gymno, ME: Metacerc, PP: Parapleurolophocercous, PT: Parthenitae, XI-Xiphidiocercariae.
 
+## Data
+The `dataset` folder in this repository is empty. You can download the dataset here (under construction). The file structure is shown below:
+
+```
+    ├── dataset                   <- root
+        ├── training_set          <- training set folders
+        |   ├── Amphistome        <- image files for parasite species
+        |   ├── Bovis           
+        |   ├── Echino
+        |   └── ...
+        |
+        ├── test_set              <- validation set folders
+        |   ├── Amphistome        <- image files for parasite species
+        |   ├── Bovis           
+        |   ├── Echino
+        |   └── ...
+```  
+
 ## Code
 The script is in Python, building CNNs and transfer learning (with VGG16), using Keras package with Tensorflow backened. Augmenting in training data is also built in the code. Main script for training is `main_train.py` where you can adjust model parameters, such as batch size and training epoch. CNN model building and data preprocessing are in `model_train.py`, where you can adjust hyperparameters, such as drop out rate. Main script for making predictions for validation set is `main_validation.py`; loading weights and model building are handled in `model_validation.py`. `plot_confusion_matrix.py` is the utility script for plotting confusion matrix of the results.
 
