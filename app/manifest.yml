@@ -1,0 +1,7 @@
+---
+applications:
+ - name: schisto-classify
+   memory: 512M
+   routes:
+   - route: schisto-classify.mybluemix.net
+   command: npm run start-prod
