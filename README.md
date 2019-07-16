@@ -6,7 +6,7 @@ Schistosomiasis is a neglected tropical disease (NTD) infecting over 250 million
 
 Our research team have used these images as training dataset to develop a deep learning model that classifies images of 11 parasite categories with higher accuracy (88%) than well-trained human parasitologists. Details of this research can be found in the publication [3]. Our model facilitats transfer learning using VGG16 and convolutional neural networks (CNNs).
 
-In addition, by working with IBM's Cognitive Open Technologies & Performance Group, we have built a Javascript web application that incorporates with our classification model, which allows users to upload their own parasite images and the classification model will provide prediction suggestion for your parasite images. The web application is located [here](http://standord.xxx) (under construction).
+In addition, by working with IBM's Cognitive Open Technologies & Performance Group, we have built a Javascript web application that incorporates with our classification model, which allows users to select their own parasite images and the classification model will provide prediction suggestions for your parasite images. The web application is located [here](https://schisto-classify.mybluemix.net).
 
 ![image_samples.png](image_samples.png)
 
@@ -40,7 +40,7 @@ For training, run:
 ```
 python main_train.py
 ```
-The script will: 
+The script will:
 - (1) Preprocess train/ validation data, save as `.npy` files
 - (2) Perform the training
 - (3) Save the weights (HDF5 file, such as`model.h5`)
