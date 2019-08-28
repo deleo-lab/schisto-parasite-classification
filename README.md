@@ -82,8 +82,8 @@ Links:
 - [3] Liu ZY-C, Chamberlin AJ, Shome P, Jones IJ, Riveau G, Jouanard N, Ndione, Sokolow SH, De Leo GA. Identification of snails and parasites of medical importance via convolutional neural network: an application for human schistosomiasis. PLoS neglected tropical diseases. 2019 (In Review).
 
 ## Contact
-Data and model: achamb@stanford.edu; zacycliu@stanford.edu or ssokolow@stanford.edu
-Web App: pvaneck@us.ibm.com
+- Data and model: achamb@stanford.edu; zacycliu@stanford.edu or ssokolow@stanford.edu
+- Web App: pvaneck@us.ibm.com
 
 ## Last updated
 Aug 28, 2019
