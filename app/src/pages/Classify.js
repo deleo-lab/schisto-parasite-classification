@@ -3,7 +3,7 @@ import {
   Button, ButtonGroup, Collapse, Form, Spinner,
   ListGroup, Tabs, Tab
 } from 'react-bootstrap';
-import { FaCamera, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaCamera, FaChevronDown, FaChevronRight, FaCheck } from 'react-icons/fa';
 import { openDB } from 'idb';
 import Cropper from 'react-cropper';
 import * as tf from '@tensorflow/tfjs';
@@ -42,13 +42,14 @@ export default class Classify extends Component {
     this.modelPath = PARASITE_MODEL_PATH;
     this.modelClasses = PARASITE_CLASSES;
 
+    // References to the models if we load them.
     this.snailModel = null;
     this.parasiteModel = null;
 
     this.state = {
       modelLoaded: false,
+      webcamLoaded: false,
       filename: '',
-      isModelLoading: false,
       isClassifying: false,
       predictions: [],
       photoSettingsOpen: true,
@@ -74,27 +75,24 @@ export default class Classify extends Component {
       this.webcam.stop();
     }
 
-    // Attempt to dispose of the model.
-    try {
-      this.model.dispose();
+    // Dispose of the models.
+    if (this.snailModel) {
+      this.snailModel.dispose();
     }
-    catch (e) {
-      // Assume that the model was not loaded or already disposed.
+    if (this.parasiteModel) {
+      this.parasiteModel.dispose();
     }
   }
 
   loadModel = async () => {
-    if (this.model) {
-      this.model.dispose();
-    }
     this.setState({ modelLoaded: false });
     if (('indexedDB' in window)) {
       try {
         this.model = await tf.loadLayersModel('indexeddb://' + this.modelDBKey);
 
         // Safe to assume tensorflowjs database and related object store exists.
-        // Get the date when the model was saved.
-        // TODO: Compare it with the date the model was last updated on the server.
+        // Get the date when the model was saved and compare it with the model date
+        // from the server.
         try {
           const db = await openDB(INDEXEDDB_DB, 1, );
           const item = await db.transaction(INDEXEDDB_STORE)
@@ -134,18 +132,32 @@ export default class Classify extends Component {
 
     // Warm up model.
     this.model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+
+    // Save references to each model in case we need to reuse them.
+    if (this.state.modelType === 'snails') {
+      this.snailModel = this.model;
+    }
+    else {
+      this.parasiteModel = this.model;
+    }
   }
 
   initWebcam = async () => {
+
+    this.setState({ webcamLoaded: false });
+    // For some reason when switching between models, the webcam
+    // video is greyed out. Let's just stop and reset the existing one.
     if (this.webcam) {
       this.webcam.stop();
       delete this.webcam;
     }
+
     try {
       this.webcam = await tf.data.webcam(
         this.refs.webcam,
         {resizeWidth: IMAGE_SIZE, resizeHeight: IMAGE_SIZE, facingMode: 'environment'}
       );
+      this.setState({ webcamLoaded: true });
     }
     catch (e) {
       this.refs.noWebcam.style.display = 'block';
@@ -282,16 +294,24 @@ export default class Classify extends Component {
 
 
   handleSnailModelChange = async event => {
-    if (this.modelType !== 'snails') {
+    if (this.state.modelType !== 'snails') {
       this.setState({
         modelType: 'snails',
         predictions: [],
-        photoSettingsOpen: true
+        photoSettingsOpen: true,
+        filename: null,
+        file: null
       });
       this.modelDBKey = INDEXEDDB_SNAIL_KEY;
       this.modelPath = SNAIL_MODEL_PATH;
       this.modelClasses = SNAIL_CLASSES;
-      await this.loadModel();
+
+      if (!this.snailModel) {
+        await this.loadModel();
+      }
+      else {
+        this.model = this.snailModel;
+      }
       this.initWebcam();
     }
   }
@@ -301,12 +321,20 @@ export default class Classify extends Component {
       this.setState({
         modelType: 'parasites',
         predictions: [],
-        photoSettingsOpen: true
+        photoSettingsOpen: true,
+        filename: null,
+        file: null
       });
       this.modelDBKey = INDEXEDDB_PARASITE_KEY;
       this.modelPath = PARASITE_MODEL_PATH;
       this.modelClasses = PARASITE_CLASSES;
-      await this.loadModel();
+
+      if (!this.parasiteModel) {
+        await this.loadModel();
+      }
+      else {
+        this.model = this.parasiteModel;
+      }
       this.initWebcam();
     }
   }
@@ -345,31 +373,32 @@ export default class Classify extends Component {
   render() {
     return (
       <div className="Classify container">
-      <ButtonGroup aria-label="Model Type" className="d-block">
+      <h4>What are you classifying?</h4>
+      <ButtonGroup aria-label="Model Type" className="d-block model-buttons">
         <Button
-          variant="dark"
+          variant={this.state.modelType !== 'snails' ? 'dark' : 'outline-dark' }
           active={this.state.modelType !== 'snails'}
           onClick={this.handleParasiteModelChange}>
-            Parasites
+            { this.state.modelType !== 'snails' && <FaCheck /> } Parasites
         </Button>
         <Button
-          variant="dark"
+          variant={this.state.modelType === 'snails' ? 'dark' : 'outline-dark' }
           active={this.state.modelType === 'snails'}
           onClick={this.handleSnailModelChange}>
-            Snails
+          Snails { this.state.modelType === 'snails' && <FaCheck /> }
         </Button>
       </ButtonGroup>
       { !this.state.modelLoaded &&
-        <Fragment>
+        <div className="pt-4">
           <Spinner animation="border" role="status">
             <span className="sr-only">Loading...</span>
           </Spinner>
           {' '}<span className="loading-model-text">Loading Model</span>
-        </Fragment>
+        </div>
       }
 
       { this.state.modelLoaded &&
-        <Fragment>
+        <div className="pt-3">
         <Button
           onClick={this.handlePanelClick}
           className="classify-panel-header"
@@ -402,14 +431,16 @@ export default class Classify extends Component {
                   </div>
                 </div>
                 <div className="button-container">
-                  <LoadButton
-                    variant="primary"
-                    size="lg"
-                    onClick={this.classifyWebcamImage}
-                    isLoading={this.state.isClassifying}
-                    text="Classify"
-                    loadingText="Classifying..."
-                  />
+                  { this.state.webcamLoaded &&
+                      <LoadButton
+                      variant="primary"
+                      size="lg"
+                      onClick={this.classifyWebcamImage}
+                      isLoading={this.state.isClassifying}
+                      text="Classify"
+                      loadingText="Classifying..."
+                    />
+                  }
                 </div>
               </Tab>
               <Tab eventKey="localfile" title="Select Local File">
@@ -467,7 +498,7 @@ export default class Classify extends Component {
               </ListGroup>
             </div>
           }
-          </Fragment>
+          </div>
         }
       </div>
     );
