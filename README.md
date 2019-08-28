@@ -8,7 +8,7 @@ Our research team have used these images as training dataset to develop a deep l
 
 In addition, by working with IBM's Cognitive Open Technologies & Performance Group, we have built a Javascript web application that incorporates with our classification model, which allows users to select their own parasite images and the classification model will provide prediction suggestions for your parasite images. The web application is located [here](https://schisto-classify.mybluemix.net).
 
-![image_samples.png](image_samples.png)
+![image_samples_2.png](image_samples_2.png)
 
 Abbreviations of parasite classes as follow, HS: Human-schisto, NHS1: Nonhuman- schisto forktail type I, NHS2: Nonhuman- schisto forktail type II, AM: Amphistome, BO: Bovis, EC: Echino, GY: Gymno, ME: Metacerc, PP: Parapleurolophocercous, PT: Parthenitae, XI-Xiphidiocercariae.
 
