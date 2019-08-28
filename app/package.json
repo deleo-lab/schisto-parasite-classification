@@ -1,5 +1,5 @@
 {
-  "name": "eco-web-app",
+  "name": "schisto-classify",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -8,6 +8,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "idb": "^4.0.3",
+    "query-string": "^6.8.2",
     "react": "^16.8.6",
     "react-bootstrap": "^1.0.0-beta.8",
     "react-cropper": "^1.2.0",
@@ -23,7 +24,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "start-prod": "node server.js"
+    "start-prod": "node server.js",
+    "lint": "eslint ./src"
   },
   "eslintConfig": {
     "extends": "react-app"

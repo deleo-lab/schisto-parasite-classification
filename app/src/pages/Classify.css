@@ -61,7 +61,6 @@
   width: 280px;
 }
 
-
 .Classify #webcam {
   height: 280px;
 }
@@ -105,4 +104,9 @@
   padding-left: 12px;
   font-size: 36px;
   font-weight: 600;
+}
+
+.Classify .model-buttons button {
+  width: 50%;
+  max-width: 300px;
 }

@@ -29,17 +29,19 @@ class App extends Component {
   render() {
     return (
         <div className="App">
-          <Container>
-            <Navbar collapseOnSelect className="app-nav-bar" variant="dark" expand="lg">
+          <Navbar collapseOnSelect className="app-nav-bar" variant="dark" expand="lg">
+            <Container>
               <Navbar.Brand href="/">SchistoClassify</Navbar.Brand>
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
               <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="">
-                  <Link className="nav-link" to="/">Classify</Link>
+                  <Link className="nav-link" to="/classify">Classify</Link>
                   <Link className="nav-link" to="/about">About</Link>
                 </Nav>
               </Navbar.Collapse>
-            </Navbar>
+            </Container>
+          </Navbar>
+          <Container>
             { this.props.updateAvailable && this.state.showUpdateAlert &&
               <div style={{paddingTop: '10px'}}>
                 <AlertDismissable
@@ -51,9 +53,24 @@ class App extends Component {
               </div>
             }
           </Container>
-          <Container>
-            <Routes />
+          <Container className="app-content">
+            <div>
+              <Routes />
+            </div>
           </Container>
+
+          <footer className="footer">
+            <Container>
+              <p>
+                This app was created by the IBM Cognitive Open Technologies Group in conjunction
+                with the Stanford <a href="https://deleolab.stanford.edu/" title="De Leo Lab">
+                De Leo Lab
+                </a>.<br />
+                <a href="https://github.com/deleo-lab/schisto-parasite-classification"
+                   title="Code Repository">Source Code</a>
+              </p>
+            </Container>
+          </footer>
         </div>
     );
   }

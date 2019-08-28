@@ -1,24 +1,30 @@
 import React, { Component, Fragment } from 'react';
-import { Button, Collapse, Form, Spinner, ListGroup, Tabs, Tab } from 'react-bootstrap';
-import { FaCamera, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import {
+  Button, ButtonGroup, Collapse, Form, Spinner,
+  ListGroup, Tabs, Tab
+} from 'react-bootstrap';
+import { FaCamera, FaChevronDown, FaChevronRight, FaCheck } from 'react-icons/fa';
 import { openDB } from 'idb';
-import Cropper  from 'react-cropper';
+import Cropper from 'react-cropper';
 import * as tf from '@tensorflow/tfjs';
+import * as queryString from 'query-string';
 import LoadButton from '../components/LoadButton';
-import { MODEL_CLASSES } from '../model/classes';
+import { PARASITE_CLASSES, SNAIL_CLASSES } from '../model/classes';
 import config from '../config';
 import './Classify.css';
 import 'cropperjs/dist/cropper.css';
 
 
-const MODEL_PATH = '/model/model.json';
+const PARASITE_MODEL_PATH = '/models/parasites/model.json';
+const SNAIL_MODEL_PATH = '/models/snails/model.json';
 const IMAGE_SIZE = 64;
 const CANVAS_SIZE = 128;
-const TOPK_PREDICTIONS = 5;
+const TOPK_PREDICTIONS = 4;
 
 const INDEXEDDB_DB = 'tensorflowjs';
-const INDEXEDDB_STORE = 'model_info_store'
-const INDEXEDDB_KEY = 'schisto-model';
+const INDEXEDDB_STORE = 'model_info_store';
+const INDEXEDDB_PARASITE_KEY = 'parasite-model';
+const INDEXEDDB_SNAIL_KEY = 'snail-model';
 
 /**
  * Class to handle the rendering of the Classify page.
@@ -32,82 +38,126 @@ export default class Classify extends Component {
     this.webcam = null;
     this.model = null;
     this.modelLastUpdated = null;
+    this.modelDBKey = INDEXEDDB_PARASITE_KEY;
+    this.modelPath = PARASITE_MODEL_PATH;
+    this.modelClasses = PARASITE_CLASSES;
+
+    // References to the models if we load them.
+    this.snailModel = null;
+    this.parasiteModel = null;
 
     this.state = {
       modelLoaded: false,
+      webcamLoaded: false,
       filename: '',
-      isModelLoading: false,
       isClassifying: false,
       predictions: [],
-      photoSettingsOpen: true
+      photoSettingsOpen: true,
+      modelType: 'parasites'
     };
+
+    const queryParams = queryString.parse(props.location.search);
+    if ('model' in queryParams && queryParams['model']  === 'snails') {
+      this.state.modelType = 'snails';
+      this.modelDBKey = INDEXEDDB_SNAIL_KEY;
+      this.modelPath = SNAIL_MODEL_PATH;
+      this.modelClasses = SNAIL_CLASSES;
+    }
   }
 
   async componentDidMount() {
-    if (('indexedDB' in window)) {
-      try {
-        this.model = await tf.loadLayersModel('indexeddb://' + INDEXEDDB_KEY);
-
-        // Safe to assume tensorflowjs database and related object store exists.
-        // Get the date when the model was saved.
-        // TODO: Compare it with the date the model was last updated on the server.
-        try {
-          const db = await openDB(INDEXEDDB_DB, 1, );
-          const item = await db.transaction(INDEXEDDB_STORE).objectStore(INDEXEDDB_STORE).get(INDEXEDDB_KEY);
-          const dateSaved = new Date(item.modelArtifactsInfo.dateSaved);
-          await this.getModelInfo();
-          console.log(this.modelLastUpdated);
-          if (!this.modelLastUpdated  || dateSaved >= new Date(this.modelLastUpdated).getTime()) {
-            console.log('Using saved model');
-          }
-          else {
-            // There is a newer model available. Refresh the one saved in IndexedDB.
-            console.log('Saved model is out of date. Updating...');
-            this.model = await tf.loadLayersModel(MODEL_PATH);
-            await this.model.save('indexeddb://' + INDEXEDDB_KEY);
-          }
-
-        }
-        catch (error) {
-          console.warn(error);
-          console.warn('Could not retrieve when model was saved.')
-        }
-
-      }
-      // If error here, assume that the object store doesn't exist and the model currently isn't
-      // saved in IndexedDB.
-      catch (error) {
-        console.log('Not found in IndexedDB. Loading and saving...');
-        console.log(error);
-        this.model = await tf.loadLayersModel(MODEL_PATH);
-        await this.model.save('indexeddb://' + INDEXEDDB_KEY);
-      }
-    }
-    // If no IndexedDB, then just download like normal.
-    else {
-      console.warn('IndexedDB not supported.');
-      this.model = await tf.loadLayersModel(MODEL_PATH);
-    }
-
-    this.setState({ modelLoaded: true });
+    await this.loadModel();
     this.initWebcam();
-
-    // Warm up model.
-    this.model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
   }
 
   async componentWillUnmount() {
     if (this.webcam) {
       this.webcam.stop();
     }
+
+    // Dispose of the models.
+    if (this.snailModel) {
+      this.snailModel.dispose();
+    }
+    if (this.parasiteModel) {
+      this.parasiteModel.dispose();
+    }
+  }
+
+  loadModel = async () => {
+    this.setState({ modelLoaded: false });
+    if (('indexedDB' in window)) {
+      try {
+        this.model = await tf.loadLayersModel('indexeddb://' + this.modelDBKey);
+
+        // Safe to assume tensorflowjs database and related object store exists.
+        // Get the date when the model was saved and compare it with the model date
+        // from the server.
+        try {
+          const db = await openDB(INDEXEDDB_DB, 1, );
+          const item = await db.transaction(INDEXEDDB_STORE)
+                               .objectStore(INDEXEDDB_STORE)
+                               .get(this.modelDBKey);
+          const dateSaved = new Date(item.modelArtifactsInfo.dateSaved);
+          await this.getModelInfo();
+          if (!this.modelLastUpdated  || dateSaved >= new Date(this.modelLastUpdated).getTime()) {
+            console.log('Using saved model: ' + this.modelDBKey);
+          }
+          else {
+            // There is a newer model available. Refresh the one saved in IndexedDB.
+            console.log('Saved model is out of date. Updating...');
+            this.model = await tf.loadLayersModel(this.modelPath);
+            await this.model.save('indexeddb://' + this.modelDBKey);
+          }
+        }
+        catch (error) {
+          console.warn(error);
+          console.warn('Could not retrieve when model was saved.');
+        }
+      }
+      // If error here, assume that the object store doesn't exist and the model currently isn't
+      // saved in IndexedDB.
+      catch (error) {
+        console.log('Key ' +  this.modelDBKey + ' not found in IndexedDB. Loading and saving...');
+        this.model = await tf.loadLayersModel(this.modelPath);
+        await this.model.save('indexeddb://' + this.modelDBKey);
+      }
+    }
+    // If no IndexedDB, then just download like normal.
+    else {
+      console.warn('IndexedDB not supported.');
+      this.model = await tf.loadLayersModel(this.modelPath);
+    }
+    this.setState({ modelLoaded: true });
+
+    // Warm up model.
+    this.model.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
+
+    // Save references to each model in case we need to reuse them.
+    if (this.state.modelType === 'snails') {
+      this.snailModel = this.model;
+    }
+    else {
+      this.parasiteModel = this.model;
+    }
   }
 
   initWebcam = async () => {
+
+    this.setState({ webcamLoaded: false });
+    // For some reason when switching between models, the webcam
+    // video is greyed out. Let's just stop and reset the existing one.
+    if (this.webcam) {
+      this.webcam.stop();
+      delete this.webcam;
+    }
+
     try {
       this.webcam = await tf.data.webcam(
         this.refs.webcam,
         {resizeWidth: IMAGE_SIZE, resizeHeight: IMAGE_SIZE, facingMode: 'environment'}
       );
+      this.setState({ webcamLoaded: true });
     }
     catch (e) {
       this.refs.noWebcam.style.display = 'block';
@@ -147,7 +197,7 @@ export default class Classify extends Component {
     this.setState({ isClassifying: true });
 
     const croppedCanvas = this.refs.cropper.getCroppedCanvas();
-    const image = tf.browser.fromPixels(croppedCanvas).toFloat();
+    const image = tf.tidy( () => tf.browser.fromPixels(croppedCanvas).toFloat());
 
     // Process and resize image before passing in to model.
     const imageData = await this.processImage(image);
@@ -164,18 +214,19 @@ export default class Classify extends Component {
     });
 
     // Draw thumbnail to UI.
-    const context = this.refs.canvas.getContext("2d");
+    const context = this.refs.canvas.getContext('2d');
     const ratioX = CANVAS_SIZE / croppedCanvas.width;
     const ratioY = CANVAS_SIZE / croppedCanvas.height;
     const ratio = Math.min(ratioX, ratioY);
     context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
     context.drawImage(croppedCanvas, 0, 0,
-                      croppedCanvas.width * ratio, croppedCanvas.height * ratio)
+                      croppedCanvas.width * ratio, croppedCanvas.height * ratio);
 
     // Dispose of tensors we are finished with.
     image.dispose();
     imageData.dispose();
     resizedImage.dispose();
+    logits.dispose();
   }
 
   classifyWebcamImage = async () => {
@@ -187,7 +238,6 @@ export default class Classify extends Component {
     const logits = this.model.predict(imageData);
     const probabilities = await logits.data();
     const preds = await this.getTopKClasses(probabilities, TOPK_PREDICTIONS);
-
     this.setState({
       predictions: preds,
       isClassifying: false,
@@ -196,12 +246,15 @@ export default class Classify extends Component {
 
     // Draw thumbnail to UI.
     const resized = tf.image.resizeBilinear(imageCapture, [CANVAS_SIZE, CANVAS_SIZE]);
-    await tf.browser.toPixels(resized.toFloat().div(255), this.refs.canvas);
+    const tensorData = tf.tidy(() => resized.toFloat().div(255));
+    await tf.browser.toPixels(tensorData, this.refs.canvas);
 
     // Dispose of tensors we are finished with.
     resized.dispose();
     imageCapture.dispose();
     imageData.dispose();
+    logits.dispose();
+    tensorData.dispose();
   }
 
   processImage = async (image) => {
@@ -232,11 +285,58 @@ export default class Classify extends Component {
     const topClassesAndProbs = [];
     for (let i = 0; i < topkIndices.length; i++) {
       topClassesAndProbs.push({
-        className: MODEL_CLASSES[topkIndices[i]],
+        className: this.modelClasses[topkIndices[i]],
         probability: (topkValues[i] * 100).toFixed(2)
-      })
+      });
     }
     return topClassesAndProbs;
+  }
+
+
+  handleSnailModelChange = async event => {
+    if (this.state.modelType !== 'snails') {
+      this.setState({
+        modelType: 'snails',
+        predictions: [],
+        photoSettingsOpen: true,
+        filename: null,
+        file: null
+      });
+      this.modelDBKey = INDEXEDDB_SNAIL_KEY;
+      this.modelPath = SNAIL_MODEL_PATH;
+      this.modelClasses = SNAIL_CLASSES;
+
+      if (!this.snailModel) {
+        await this.loadModel();
+      }
+      else {
+        this.model = this.snailModel;
+      }
+      this.initWebcam();
+    }
+  }
+
+  handleParasiteModelChange = async event => {
+    if (this.state.modelType !== 'parasites') {
+      this.setState({
+        modelType: 'parasites',
+        predictions: [],
+        photoSettingsOpen: true,
+        filename: null,
+        file: null
+      });
+      this.modelDBKey = INDEXEDDB_PARASITE_KEY;
+      this.modelPath = PARASITE_MODEL_PATH;
+      this.modelClasses = PARASITE_CLASSES;
+
+      if (!this.parasiteModel) {
+        await this.loadModel();
+      }
+      else {
+        this.model = this.parasiteModel;
+      }
+      this.initWebcam();
+    }
   }
 
   handlePanelClick = event => {
@@ -259,6 +359,12 @@ export default class Classify extends Component {
         break;
       case 'localfile':
         this.stopWebcam();
+
+        // Reset file states.
+        this.setState({
+          filename: null,
+          file: null
+        });
         break;
       default:
     }
@@ -267,18 +373,32 @@ export default class Classify extends Component {
   render() {
     return (
       <div className="Classify container">
-
+      <h4>What are you classifying?</h4>
+      <ButtonGroup aria-label="Model Type" className="d-block model-buttons">
+        <Button
+          variant={this.state.modelType !== 'snails' ? 'dark' : 'outline-dark' }
+          active={this.state.modelType !== 'snails'}
+          onClick={this.handleParasiteModelChange}>
+            { this.state.modelType !== 'snails' && <FaCheck /> } Parasites
+        </Button>
+        <Button
+          variant={this.state.modelType === 'snails' ? 'dark' : 'outline-dark' }
+          active={this.state.modelType === 'snails'}
+          onClick={this.handleSnailModelChange}>
+          Snails { this.state.modelType === 'snails' && <FaCheck /> }
+        </Button>
+      </ButtonGroup>
       { !this.state.modelLoaded &&
-        <Fragment>
+        <div className="pt-4">
           <Spinner animation="border" role="status">
             <span className="sr-only">Loading...</span>
           </Spinner>
           {' '}<span className="loading-model-text">Loading Model</span>
-        </Fragment>
+        </div>
       }
 
       { this.state.modelLoaded &&
-        <Fragment>
+        <div className="pt-3">
         <Button
           onClick={this.handlePanelClick}
           className="classify-panel-header"
@@ -311,14 +431,16 @@ export default class Classify extends Component {
                   </div>
                 </div>
                 <div className="button-container">
-                  <LoadButton
-                    variant="primary"
-                    size="lg"
-                    onClick={this.classifyWebcamImage}
-                    isLoading={this.state.isClassifying}
-                    text="Classify"
-                    loadingText="Classifying..."
-                  />
+                  { this.state.webcamLoaded &&
+                      <LoadButton
+                      variant="primary"
+                      size="lg"
+                      onClick={this.classifyWebcamImage}
+                      isLoading={this.state.isClassifying}
+                      text="Classify"
+                      loadingText="Classifying..."
+                    />
+                  }
                 </div>
               </Tab>
               <Tab eventKey="localfile" title="Select Local File">
@@ -339,7 +461,7 @@ export default class Classify extends Component {
                       <Cropper
                         ref="cropper"
                         src={this.state.file}
-                        style={{height: 400, width: "100%"}}
+                        style={{height: 400, width: '100%'}}
                         guides={true}
                         viewMode={2}
                       />
@@ -376,7 +498,7 @@ export default class Classify extends Component {
               </ListGroup>
             </div>
           }
-          </Fragment>
+          </div>
         }
       </div>
     );
