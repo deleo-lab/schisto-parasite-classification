@@ -234,6 +234,11 @@ export default class Classify extends Component {
 
     const imageCapture = await this.webcam.capture();
 
+    // Convert image to grayscale.
+    // const grayscale = tf.tidy(() => {
+    //   return tf.tile(imageCapture.mean(2).expandDims(-1), [1, 1, 3]);
+    // });
+
     const imageData = await this.processImage(imageCapture);
     const logits = this.model.predict(imageData);
     const probabilities = await logits.data();
@@ -248,6 +253,10 @@ export default class Classify extends Component {
     const resized = tf.image.resizeBilinear(imageCapture, [CANVAS_SIZE, CANVAS_SIZE]);
     const tensorData = tf.tidy(() => resized.toFloat().div(255));
     await tf.browser.toPixels(tensorData, this.refs.canvas);
+
+    // const resized = tf.image.resizeBilinear(grayscale, [CANVAS_SIZE, CANVAS_SIZE]);
+    // const tensorData = tf.tidy(() => resized.toFloat().div(255));
+    // await tf.browser.toPixels(tensorData, this.refs.canvas);
 
     // Dispose of tensors we are finished with.
     resized.dispose();

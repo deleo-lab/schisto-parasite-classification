@@ -1,54 +1,37 @@
 .App {
   text-align: center;
-  display: flex;
   flex-flow: column;
-  height: 100vh;
+  min-height: 100vh;
+  display: flex;
 }
 
 .App .navbar-brand {
   font-weight: bold;
 }
 
-/* .App .app-content {
-  min-height: 1000px;
-} */
-
 .app-nav-bar {
   background-color: #49494b;
   border-top: 3px solid rgb(228,32,21);
+  flex: 1 0 auto;
+  max-height: 70px;
 }
-
-/* .footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  padding-top: 20px;
-  padding-bottom: 10px;
-  background-color: #49494b;
-  text-align: left;
-  color: white;
-  font-size: 13px;
-} */
 
 html, body {
   height: 100%;
 }
 
-body {
-  display: flex;
-  flex-flow: column;
-  height: 100vh;
-}
-
 .app-content {
   flex: 1 0 auto;
+
 }
+
 .footer {
   margin-top: 50px;
   flex-shrink: 0;
   color: white;
   font-size: 13px;
   padding-top: 20px;
+  display: flex;
 }
 
 .footer a {
