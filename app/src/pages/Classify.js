@@ -46,6 +46,10 @@ export default class Classify extends Component {
     this.snailModel = null;
     this.parasiteModel = null;
 
+    // Whether input image should be converted to grayscale.
+    // Currently only effects webcam image.
+    this.convertToGrayscale = true;
+
     this.state = {
       modelLoaded: false,
       webcamLoaded: false,
@@ -62,6 +66,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_SNAIL_KEY;
       this.modelPath = SNAIL_MODEL_PATH;
       this.modelClasses = SNAIL_CLASSES;
+      this.convertToGrayscale = false;
     }
   }
 
@@ -232,12 +237,15 @@ export default class Classify extends Component {
   classifyWebcamImage = async () => {
     this.setState({ isClassifying: true });
 
-    const imageCapture = await this.webcam.capture();
+    let imageCapture = await this.webcam.capture();
 
-    // Convert image to grayscale.
-    // const grayscale = tf.tidy(() => {
-    //   return tf.tile(imageCapture.mean(2).expandDims(-1), [1, 1, 3]);
-    // });
+    if (this.convertToGrayscale) {
+      const grayscale = tf.tidy(() => {
+        return tf.tile(imageCapture.mean(2).expandDims(-1), [1, 1, 3]);
+      });
+      imageCapture.dispose();
+      imageCapture = grayscale;
+    }
 
     const imageData = await this.processImage(imageCapture);
     const logits = this.model.predict(imageData);
@@ -253,10 +261,6 @@ export default class Classify extends Component {
     const resized = tf.image.resizeBilinear(imageCapture, [CANVAS_SIZE, CANVAS_SIZE]);
     const tensorData = tf.tidy(() => resized.toFloat().div(255));
     await tf.browser.toPixels(tensorData, this.refs.canvas);
-
-    // const resized = tf.image.resizeBilinear(grayscale, [CANVAS_SIZE, CANVAS_SIZE]);
-    // const tensorData = tf.tidy(() => resized.toFloat().div(255));
-    // await tf.browser.toPixels(tensorData, this.refs.canvas);
 
     // Dispose of tensors we are finished with.
     resized.dispose();
@@ -314,6 +318,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_SNAIL_KEY;
       this.modelPath = SNAIL_MODEL_PATH;
       this.modelClasses = SNAIL_CLASSES;
+      this.convertToGrayscale = false;
 
       if (!this.snailModel) {
         await this.loadModel();
@@ -337,6 +342,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_PARASITE_KEY;
       this.modelPath = PARASITE_MODEL_PATH;
       this.modelClasses = PARASITE_CLASSES;
+      this.convertToGrayscale = true;
 
       if (!this.parasiteModel) {
         await this.loadModel();
