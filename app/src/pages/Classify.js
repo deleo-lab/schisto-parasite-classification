@@ -160,7 +160,7 @@ export default class Classify extends Component {
     try {
       this.webcam = await tf.data.webcam(
         this.refs.webcam,
-        {resizeWidth: IMAGE_SIZE, resizeHeight: IMAGE_SIZE, facingMode: 'environment'}
+        {resizeWidth: CANVAS_SIZE, resizeHeight: CANVAS_SIZE, facingMode: 'environment'}
       );
       this.setState({ webcamLoaded: true });
     }
@@ -247,7 +247,8 @@ export default class Classify extends Component {
       imageCapture = grayscale;
     }
 
-    const imageData = await this.processImage(imageCapture);
+    const resized = tf.image.resizeBilinear(imageCapture, [IMAGE_SIZE, IMAGE_SIZE]);
+    const imageData = await this.processImage(resized);
     const logits = this.model.predict(imageData);
     const probabilities = await logits.data();
     const preds = await this.getTopKClasses(probabilities, TOPK_PREDICTIONS);
@@ -258,8 +259,7 @@ export default class Classify extends Component {
     });
 
     // Draw thumbnail to UI.
-    const resized = tf.image.resizeBilinear(imageCapture, [CANVAS_SIZE, CANVAS_SIZE]);
-    const tensorData = tf.tidy(() => resized.toFloat().div(255));
+    const tensorData = tf.tidy(() => imageCapture.toFloat().div(255));
     await tf.browser.toPixels(tensorData, this.refs.canvas);
 
     // Dispose of tensors we are finished with.
