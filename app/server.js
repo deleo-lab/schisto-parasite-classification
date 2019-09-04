@@ -10,10 +10,10 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 
-app.get('/api/model_info', (req, res) => {
-  const date = fs.readFileSync('model_info.txt', 'utf8');
+app.get('/api/model_info/:model', (req, res) => {
+  const modelInfo = JSON.parse(fs.readFileSync('model_info.json', 'utf8'));
   return res.status(200).json({
-    last_updated: date.trim()
+    last_updated: modelInfo.models[req.params.model].last_updated
   });
 });
 
