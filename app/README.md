@@ -65,7 +65,8 @@ in the browser must be closed completely to prompt an update of the code when yo
 
 ## Other Information
 
-To prompt the browser to download a new model if one is available, the app queries a simple endpoint
-`/api/model_info` from the server. This endpoint provides the date the model was last updated as provided by
-`model_info.txt` for now. This can be updated with `date > model_info.txt`. If the date of the application's
-locally stored model is before this date, an update is prompted, and the new one is updated and saved.
+To prompt the browser to download a new model if one is available, the app queries an endpoint
+`/api/model_info/[model_name]` from the server (e.g. `/api/model_info/snails' and `/api/model_info/parasites')
+This endpoint provides the date each model was last updated as provided by
+`model_info.json` for now. If the date of the application's locally stored model is before this date, the user
+is given a prompt to download and update.
