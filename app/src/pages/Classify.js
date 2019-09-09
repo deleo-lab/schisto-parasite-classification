@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import {
-  Button, ButtonGroup, Collapse, Form, Spinner,
+  Alert, Button, ButtonGroup, Collapse, Container, Form, Spinner,
   ListGroup, Tabs, Tab
 } from 'react-bootstrap';
 import { FaCamera, FaChevronDown, FaChevronRight, FaCheck } from 'react-icons/fa';
@@ -46,6 +46,10 @@ export default class Classify extends Component {
     this.snailModel = null;
     this.parasiteModel = null;
 
+    // Whether input image should be converted to grayscale before inference.
+    // Currently only effects webcam image.
+    this.convertToGrayscale = true;
+
     this.state = {
       modelLoaded: false,
       webcamLoaded: false,
@@ -53,7 +57,12 @@ export default class Classify extends Component {
       isClassifying: false,
       predictions: [],
       photoSettingsOpen: true,
-      modelType: 'parasites'
+      modelType: 'parasites',
+      inputTab: 'camera',
+      modelUpdateAvailable: false,
+      showModelUpdateAlert: false,
+      showModelUpdateSuccess: false,
+      isDownloadingModel: false,
     };
 
     const queryParams = queryString.parse(props.location.search);
@@ -62,6 +71,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_SNAIL_KEY;
       this.modelPath = SNAIL_MODEL_PATH;
       this.modelClasses = SNAIL_CLASSES;
+      this.convertToGrayscale = false;
     }
   }
 
@@ -104,10 +114,11 @@ export default class Classify extends Component {
             console.log('Using saved model: ' + this.modelDBKey);
           }
           else {
-            // There is a newer model available. Refresh the one saved in IndexedDB.
-            console.log('Saved model is out of date. Updating...');
-            this.model = await tf.loadLayersModel(this.modelPath);
-            await this.model.save('indexeddb://' + this.modelDBKey);
+            // There is a newer model available
+            this.setState({
+              modelUpdateAvailable: true,
+              showModelUpdateAlert: true,
+            });
           }
         }
         catch (error) {
@@ -155,7 +166,7 @@ export default class Classify extends Component {
     try {
       this.webcam = await tf.data.webcam(
         this.refs.webcam,
-        {resizeWidth: IMAGE_SIZE, resizeHeight: IMAGE_SIZE, facingMode: 'environment'}
+        {resizeWidth: CANVAS_SIZE, resizeHeight: CANVAS_SIZE, facingMode: 'environment'}
       );
       this.setState({ webcamLoaded: true });
     }
@@ -177,7 +188,7 @@ export default class Classify extends Component {
   }
 
   getModelInfo = async () => {
-    await fetch(`${config.API_ENDPOINT}/model_info`, {
+    await fetch(`${config.API_ENDPOINT}/model_info/${this.state.modelType}`, {
       method: 'GET',
     })
     .then(async (response) => {
@@ -232,9 +243,18 @@ export default class Classify extends Component {
   classifyWebcamImage = async () => {
     this.setState({ isClassifying: true });
 
-    const imageCapture = await this.webcam.capture();
+    let imageCapture = await this.webcam.capture();
 
-    const imageData = await this.processImage(imageCapture);
+    if (this.convertToGrayscale) {
+      const grayscale = tf.tidy(() => {
+        return tf.tile(imageCapture.mean(2).expandDims(-1), [1, 1, 3]);
+      });
+      imageCapture.dispose();
+      imageCapture = grayscale;
+    }
+
+    const resized = tf.image.resizeBilinear(imageCapture, [IMAGE_SIZE, IMAGE_SIZE]);
+    const imageData = await this.processImage(resized);
     const logits = this.model.predict(imageData);
     const probabilities = await logits.data();
     const preds = await this.getTopKClasses(probabilities, TOPK_PREDICTIONS);
@@ -245,8 +265,7 @@ export default class Classify extends Component {
     });
 
     // Draw thumbnail to UI.
-    const resized = tf.image.resizeBilinear(imageCapture, [CANVAS_SIZE, CANVAS_SIZE]);
-    const tensorData = tf.tidy(() => resized.toFloat().div(255));
+    const tensorData = tf.tidy(() => imageCapture.toFloat().div(255));
     await tf.browser.toPixels(tensorData, this.refs.canvas);
 
     // Dispose of tensors we are finished with.
@@ -292,6 +311,20 @@ export default class Classify extends Component {
     return topClassesAndProbs;
   }
 
+  updateModel = async () => {
+    // Get the latest model from the server and refresh the one saved in IndexedDB.
+    console.log('Updating the model: ' + this.modelDBKey);
+    this.setState({ isDownloadingModel: true });
+    this.model = await tf.loadLayersModel(this.modelPath);
+    await this.model.save('indexeddb://' + this.modelDBKey);
+    this.setState({
+      isDownloadingModel: false,
+      modelUpdateAvailable: false,
+      showModelUpdateAlert: false,
+      showModelUpdateSuccess: true
+    });
+  }
+
 
   handleSnailModelChange = async event => {
     if (this.state.modelType !== 'snails') {
@@ -305,6 +338,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_SNAIL_KEY;
       this.modelPath = SNAIL_MODEL_PATH;
       this.modelClasses = SNAIL_CLASSES;
+      this.convertToGrayscale = false;
 
       if (!this.snailModel) {
         await this.loadModel();
@@ -312,6 +346,7 @@ export default class Classify extends Component {
       else {
         this.model = this.snailModel;
       }
+      this.setState({inputTab: 'camera'});
       this.initWebcam();
     }
   }
@@ -328,6 +363,7 @@ export default class Classify extends Component {
       this.modelDBKey = INDEXEDDB_PARASITE_KEY;
       this.modelPath = PARASITE_MODEL_PATH;
       this.modelClasses = PARASITE_CLASSES;
+      this.convertToGrayscale = true;
 
       if (!this.parasiteModel) {
         await this.loadModel();
@@ -335,6 +371,7 @@ export default class Classify extends Component {
       else {
         this.model = this.parasiteModel;
       }
+      this.setState({inputTab: 'camera'});
       this.initWebcam();
     }
   }
@@ -353,18 +390,16 @@ export default class Classify extends Component {
   }
 
   handleTabSelect = activeKey => {
+
     switch(activeKey) {
       case 'camera':
+        this.setState({inputTab: 'camera'});
         this.startWebcam();
         break;
       case 'localfile':
-        this.stopWebcam();
-
         // Reset file states.
-        this.setState({
-          filename: null,
-          file: null
-        });
+        this.setState({filename: null, file: null, inputTab: 'localfile'});
+        this.stopWebcam();
         break;
       default:
     }
@@ -415,7 +450,46 @@ export default class Classify extends Component {
           </Button>
           <Collapse in={this.state.photoSettingsOpen}>
             <div id="photo-selection-pane">
-            <Tabs defaultActiveKey="camera" id="input-options" onSelect={this.handleTabSelect}
+              { this.state.modelUpdateAvailable && this.state.showModelUpdateAlert &&
+                <Container>
+                  <Alert
+                    variant="info"
+                    show={this.state.modelUpdateAvailable && this.state.showModelUpdateAlert}
+                    onClose={() => this.setState({ showModelUpdateAlert: false})}
+                    dismissible>
+                      An update for the <strong>{this.state.modelType}</strong> model is available.
+                      <div className="d-flex justify-content-center pt-1">
+                        {!this.state.isDownloadingModel &&
+                          <Button onClick={this.updateModel}
+                                  variant="outline-info">
+                            Update
+                          </Button>
+                        }
+                        {this.state.isDownloadingModel &&
+                          <div>
+                            <Spinner animation="border" role="status" size="sm">
+                              <span className="sr-only">Downloading...</span>
+                            </Spinner>
+                            {' '}<strong>Downloading...</strong>
+                          </div>
+                        }
+                      </div>
+                  </Alert>
+                </Container>
+              }
+
+              {this.state.showModelUpdateSuccess &&
+                <Container>
+                  <Alert variant="success"
+                         onClose={() => this.setState({ showModelUpdateSuccess: false})}
+                         dismissible>
+                    The <strong>{this.state.modelType}</strong> model has been updated!
+                  </Alert>
+                </Container>
+              }
+
+            <Tabs id="input-options" activeKey={this.state.inputTab}
+                  onSelect={this.handleTabSelect}
                   className="justify-content-center">
               <Tab eventKey="camera" title="Take Photo">
                 <div id="no-webcam" ref="noWebcam">
