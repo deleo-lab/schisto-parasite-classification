@@ -13,7 +13,7 @@ In addition, by working with IBM's Cognitive Open Technologies & Performance Gro
 Image examples for snail and parasite classes. For snail classes, A-1 and A-2: Biomphalaria. B-1 and B-2: Bulinus. C-1 and C-2: Lymnaea. D-1 and D-2: Melanoides; abbreviations of parasite classes as follow, HS: Human-schisto, NHS1: Nonhuman- schisto forktail type I, NHS2: Nonhuman- schisto forktail type II, AM: Amphistome, BO: Bovis, EC: Echino, GY: Gymno, ME: Metacerc, PP: Parapleurolophocercous, PT: Parthenitae, XI-Xiphidiocercariae.
 
 ## Data
-The `dataset` folder in this repository is empty. You can download the dataset here (under construction). The file structure is shown below:
+The `dataset` folder in this repository is empty. You can download the dataset [here] (https://drive.google.com/drive/folders/1cJ_KfwMnq0uZJ9GuD7zEfZgBfdV9AJWD?usp=sharing). The file structure is shown below:
 
 ```
     ├── dataset                   <- root
@@ -86,4 +86,4 @@ Links:
 - Web App: pvaneck@us.ibm.com
 
 ## Last updated
-Aug 28, 2019
+Oct 1, 2019
