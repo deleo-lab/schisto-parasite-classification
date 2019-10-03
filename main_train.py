@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2019 Otolith- Monterey Bay Aquarium- Conservation Research
+# Copyright (c) 2019 De Leo Lab- Hopkins Marine Station, Stanford University
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@ See our method paper:
 Liu ZY-C, Chamberlin AJ, Shome P, Jones IJ, Riveau G, Jouanard N, Ndione, Sokolow SH, 
 De Leo GA. Snail and Parasite Image Classification using Deep Convolutional 
 Neural Networks: Application to Human Schistosomiasis Environmental Risk Monitoring. 
-PLoS neglected tropical diseases. 2019 (submitted).
+PLoS neglected tropical diseases. 2019 (In Review).
 
 Utility script:
 model_train.py: data preprocessing, CNN architecture, model building, plot confusion matrix
