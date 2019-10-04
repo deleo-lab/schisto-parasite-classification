@@ -1,7 +1,8 @@
 import { PropTypes } from 'prop-types';
 import React, { Component } from 'react';
 import { Link, withRouter } from 'react-router-dom';
-import { Container, Nav, Navbar } from 'react-bootstrap';
+import { Col, Container, Image, Nav, Navbar, Row } from 'react-bootstrap';
+import { FaGithub } from 'react-icons/fa';
 import AlertDismissable from './components/AlertDismissable';
 import Routes from './Routes';
 import './App.css';
@@ -62,14 +63,35 @@ class App extends Component {
 
           <footer className="footer">
             <Container>
-              <p>
-                This app was created by the IBM Cognitive Open Technologies Group in conjunction
-                with the Stanford <a href="https://deleolab.stanford.edu/" title="De Leo Lab">
-                De Leo Lab
-                </a>.<br />
-                <a href="https://github.com/deleo-lab/schisto-parasite-classification"
-                   title="Code Repository">Source Code</a>
-              </p>
+              <Row>
+                <Col className="icon-links pt-4" xs="12" md="3" >
+                  <a title="GitHub Link"
+                     href="https://github.com/deleo-lab/schisto-parasite-classification"
+                     target="_blank" rel="noopener noreferrer">
+                     <FaGithub size="3em" />
+                  </a>
+                </Col>
+                <Col className="logos" xs="12" md="9">
+                  <a href="https://ibm.org/"
+                     title="International Business Machines"
+                     target="_blank" rel="noopener noreferrer">
+                    <Image src="images/ibm-logo.svg"
+                           style={{'max-width': '100px', 'margin-top': '20px'}} />
+                  </a>
+                  <a href="https://ecohealthsolutions.stanford.edu/"
+                     title="Program for Disease Ecology, Health and the Environment"
+                     target="_blank" rel="noopener noreferrer">
+                    <Image src="images/stanford-disease-logo-horizontal.png"
+                           style={{'max-width': '280px'}} />
+                  </a>
+                  <a href="http://www.theupstreamalliance.org/"
+                     title="The Upstream Alliance"
+                     target="_blank" rel="noopener noreferrer">
+                    <Image src="images/upstream-alliance-logo.png"
+                           style={{'max-width': '200px', 'margin-top': '20px'}} />
+                  </a>
+                </Col>
+              </Row>
             </Container>
           </footer>
         </div>

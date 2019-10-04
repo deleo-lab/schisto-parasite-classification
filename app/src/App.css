@@ -25,16 +25,38 @@ html, body {
 .footer {
   margin-top: 50px;
   flex-shrink: 0;
-  color: white;
+  color: #444;
   font-size: 13px;
-  padding-top: 20px;
+  padding-top: 5px;
   display: flex;
+  padding-bottom: 20px;
 }
 
 .footer a {
-  color: #9BBBD7;
+  color: #49494b;
+}
+
+.footer .alliance-logo {
+  padding-top: 20px;
+}
+
+.footer img {
+  padding-left: 10px;
+  padding-right: 10px;
+  width: 100%;
+  height: auto;
+}
+
+@media only screen and (min-width: 993px) {
+  .footer .logos {
+    text-align: right;
+  }
+
+  .footer .icon-links {
+    text-align: left;
+  }
 }
 
 footer {
-  background: #49494b;
+  background: #e4e4e4;
 }
