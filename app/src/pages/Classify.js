@@ -53,6 +53,7 @@ export default class Classify extends Component {
     this.state = {
       modelLoaded: false,
       webcamLoaded: false,
+      isFirstLoad: false,
       filename: '',
       isClassifying: false,
       predictions: [],
@@ -130,6 +131,7 @@ export default class Classify extends Component {
       // saved in IndexedDB.
       catch (error) {
         console.log('Key ' +  this.modelDBKey + ' not found in IndexedDB. Loading and saving...');
+        this.setState({ isFirstLoad: true });
         this.model = await tf.loadLayersModel(this.modelPath);
         await this.model.save('indexeddb://' + this.modelDBKey);
       }
@@ -137,6 +139,7 @@ export default class Classify extends Component {
     // If no IndexedDB, then just download like normal.
     else {
       console.warn('IndexedDB not supported.');
+      this.setState({ isFirstLoad: true });
       this.model = await tf.loadLayersModel(this.modelPath);
     }
     this.setState({ modelLoaded: true });
@@ -429,6 +432,11 @@ export default class Classify extends Component {
             <span className="sr-only">Loading...</span>
           </Spinner>
           {' '}<span className="loading-model-text">Loading Model</span>
+          { this.state.isFirstLoad &&
+            <div>
+              <p>Downloading model from the web. This first download may take a while.</p>
+            </div>
+          }
         </div>
       }
 
@@ -494,8 +502,11 @@ export default class Classify extends Component {
               <Tab eventKey="camera" title="Take Photo">
                 <div id="no-webcam" ref="noWebcam">
                   <span className="camera-icon"><FaCamera /></span>
-                  No camera found. <br />
-                  Please use a device with a camera, or upload an image instead.
+                  No supported camera found.
+                  Try selecting a local image instead.<br />
+                  <small>You can also take a picture through your device's camera app
+                  (if available) by selecting it
+                  when using the "Select Local File" option.</small>
                 </div>
                 <div className="webcam-box-outer">
                   <div className="webcam-box-inner">
