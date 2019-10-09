@@ -20,9 +20,13 @@ export default class Home extends Component {
           to provide offline capabilities.
 
           <br /><br />
-          More info about this project can be found <a title="GitHub Link"
-                             href="https://github.com/deleo-lab/schisto-parasite-classification">
-                             here.</a>
+          This app was created by the IBM Cognitive Open Technologies Group in conjunction
+          with the Stanford <a href="https://deleolab.stanford.edu/" title="De Leo Lab">
+          De Leo Lab</a>. More info about this project can be
+          found <a title="GitHub Link"
+            href="https://github.com/deleo-lab/schisto-parasite-classification">
+              in the GitHub repository.
+          </a>
         </p>
       </div>
     );
