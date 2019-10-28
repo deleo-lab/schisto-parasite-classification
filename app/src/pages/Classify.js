@@ -549,6 +549,7 @@ export default class Classify extends Component {
                         style={{height: 400, width: '100%'}}
                         guides={true}
                         viewMode={2}
+                        autoCropArea={1}
                       />
                     </div>
                     <div className="button-container">
